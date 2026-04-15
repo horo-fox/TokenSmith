@@ -1,4 +1,9 @@
+#show link: set text(fill: blue)
+
 = Making the TokenSmith repository more maintainable
+
+Code link: #link("https://github.com/horo-fox/TokenSmith"), but you can
+see the diff here: #link("https://github.com/georgia-tech-db/TokenSmith/compare/main...horo-fox:TokenSmith:code-cleanup").
 
 There's always more software engineering practices to follow, so I
 decided that the best project for me, considering I am familiar with
@@ -26,11 +31,46 @@ Unfortunately, I easily get distracted. However, I had nonetheless done
 research regarding some of the improvements. Describing them one at a
 time:
 
-=== Switching to a precompiled llama.cpp on PyPI
+=== Shelling out to a precompiled provider
+
+It seems possible to use Ollama. Essentially, anything with a
+`from llama_cpp import Llama` would be replaced with `import ollama`.
+However, I'm not yet convinced this is the easiest alternative.
+Regardless, it's likely easier to install than worrying about anaconda
+and a Makefile and having to compile llama.cpp.
+
+I think it would be simple to catch `ImportError` and try using
+the `ollama` instead. This would mean that if someone wants, they
+could use `llama.cpp`, but they could also avoid having to compile
+anything. This should also check there's a running server, otherwise
+the program will error out at some point later which is annoying.
+
+Additionally, I think the model names differ between the files and what
+we can provide to `ollama`... I'm not sure if the best solution is an
+extra configuration key.
+
+=== Switching to a precompiled `llama.cpp` on PyPI
 
 Unfortunately, it seems that Python wheels (precompiled packages) are
 not advanced enough to support the large array of possibilities that
 depend e.g. on your GPU. I don't think this one is possible.
+
+=== Lockfile
+
+It looks like there's a #link("https://github.com/conda/conda-lock")[conda-lock]
+project that provides lockfiles for anaconda. However, it appears any
+`conda create` would need to then be `conda-lock install`, which is not
+great.
+
+If it's possible to avoid compiling `llama.cpp`, I think the project
+could support `uv`, which has a `uv.lock` file.
+
+=== Linter + autoformatter
+
+This doesn't seem very hard. I'll need to format my final report
+weirdly, because while I could just do this and provide the diff, the
+changes will very easily go out of sync! Instead, I should probably
+provide commands to do so and provide a branch without these changes.
 
 == Challenges and observations
 
