@@ -19,3 +19,30 @@ proposal (with better formatting now!), here's some possibilities:
 
 Some of these are vaguer than others, but generally they should help
 future contributors by standardizing more.
+
+== Current progress
+
+Unfortunately, I easily get distracted. However, I had nonetheless done
+research regarding ollama and I've done some of the improvements.
+Describing them one at a time:
+
+=== TODO
+
+TODO
+
+== Challenges and observations
+
+TODO
+
+== Next steps
+
+I should do more of the improvements and come up with some more.
+Additionally, I should probably get some feedback on what sort of
+code quality tools are even nice; maybe our instructor has some set of
+preferred tooling.
+
+#pagebreak()
+
+= Appendix: learning episode questions
+
+TODO! Follow the EdStem post and provide some data for the AI model /s
