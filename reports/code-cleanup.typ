@@ -53,7 +53,9 @@ depend e.g. on your GPU. I don't think this is possible.
 === Shelling out to a precompiled provider
 
 It seems possible to use Ollama. Essentially, anything with a
-`from llama_cpp import Llama` has been replaced with `import ollama`.
+`from llama_cpp import Llama` has been supplemented with
+`import ollama`. I additionally added basic `FakeLlama` interfaces to
+avoid breaking things with the new interface `ollama` provides.
 However, I'm not yet convinced this is the easiest alternative.
 Regardless, it's easier to install than worrying about Anaconda and a
 Makefile and having to compile llama.cpp.
@@ -119,10 +121,10 @@ without having to navigate VSCode.
 == Better prompts for chat mode
 
 Currently `uv run -m src.main chat` uses `input` to get user input, to
-then to the model. However, this can be improved. I added an `import
-readline` to the top of the file, which ensures that basic keyboard
-shortcuts start working (for example option+delete for a single word
-deletion) and that up arrows work.
+then to the model. However, this can be improved. I added an
+`import readline` to the top of the file, which ensures that basic
+keyboard shortcuts start working (for example option+delete for a
+single word deletion) and that up arrows work.
 
 This is technically not within scope for my project, but it's a single
 line change and a very obscure technique! This could also use e.g.
@@ -139,13 +141,14 @@ example, the first one `uv run pyright` shows is:
 .../TokenSmith/src/api_server.py:137:17 - error: "save_chat_log" is not a known attribute of "None" (reportOptionalMemberAccess)
 ```
 
-This can be fixed by changing `_logger = None` to `_logger: RunLogger
-| None = None`, as well as adding an `assert _logger is not None` above
-the `_logger.save_chat_log` usage. Alternatively, if the `except
-Exception:` is meant to catch the `AttributeError`, the code could add
+This can be fixed by changing `_logger = None` to
+`_logger: RunLogger | None = None`, as well as adding an
+`assert _logger is not None` above the `_logger.save_chat_log` usage.
+Alternatively, if the `except Exception:` is meant to catch the
+`AttributeError`, the code could add
 `if _logger is not None: return False` and remove the `try`/`except`.
 Many other type errors would be this trivial to solve and those that
-require larger refactors could be avoided by adding a `# type: ignore`.
+require larger refactors can be silenced by adding a `# type: ignore`.
 
 I also didn't address all lint errors. This is because there's so many
 that fixing them would lead to merge conflicts. However,
