@@ -1,6 +1,6 @@
 import textwrap, re
 try:
-    from llama_cpp import Llama, LlamaRAMCache
+    from llama_cpp import Llama, LlamaRAMCache  # pyright: ignore[reportMissingImports]
 except ImportError:
     try:
         import ollama

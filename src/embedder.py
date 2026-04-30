@@ -6,7 +6,7 @@ import numpy as np
 from pathlib import Path
 from typing import List, Union, Optional
 try:
-    from llama_cpp import Llama
+    from llama_cpp import Llama  # pyright: ignore[reportMissingImports]
 except ImportError:
     Llama = None
     try:

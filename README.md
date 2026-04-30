@@ -302,6 +302,11 @@ And to run the autoformatter, use:
 uv run ruff format
 ```
 
+To run `pyright`, the type checker underlying VSCode's Python support, use:
+```shell
+uv run pyright
+```
+
 ## Testing
 
 ```shell

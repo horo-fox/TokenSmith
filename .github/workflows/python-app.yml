@@ -41,3 +41,6 @@ jobs:
     - name: Autoformat with ruff
       if: always()
       run: uv run ruff format --check
+    - name: Type check with pyright
+      if: always()
+      run: uv run pyright || true

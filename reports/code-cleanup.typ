@@ -56,12 +56,14 @@ using `ollama` instead. This would mean that if someone wants, they
 could use `llama.cpp`, but they could also avoid having to compile
 anything.
 
-Additionally, someone must modify `config.yaml`!
-
 After making this change, I switched the project to be able to use
 `uv`. I updated the README for all the necessary commands. Compared to
 `make build` which took 150.26 seconds (n=1), `uv sync` with a cold
 cache took 9.7 seconds (n=1).
+
+Additionally, when using GitHub Actions (described later), using `uv`
+made the overall job take 32 seconds, whereas just `conda`'s install
+phase took 5 and a half minutes!
 
 ==== One more benefit: lockfiles
 
@@ -94,6 +96,18 @@ I made the GitHub Actions run on every push, as well as added a new job
 whose only purpose was to run the linter and autoformatter. Since I
 did not run the autoformatter or fixed any lints, this will fail for
 now.
+
+=== Typechecking
+
+Since I assume most contributors are using VSCode's Python support, I
+added `pyright` as a typechecker in GitHub Actions as well as the
+README. By default, it should roughly match what VSCode would say.
+
+As part of this, I added any requirements necessary to ensure that all
+the imports can get resolved. In addition, I added a `|| true` to CI
+for now, since there are many issues! This is nonetheless a strict
+improvement as now developers can see all the typechecking issues
+without having to navigate VSCode.
 
 == Next steps
 
