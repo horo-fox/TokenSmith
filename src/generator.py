@@ -1,5 +1,43 @@
 import textwrap, re
-from llama_cpp import Llama, LlamaRAMCache
+try:
+    from llama_cpp import Llama, LlamaRAMCache
+except ImportError:
+    try:
+        import ollama
+    except ImportError:
+        print('one of llama_cpp or ollama must be installed')
+        raise
+    else:
+        USING_OLLAMA = True
+else:
+    USING_OLLAMA = False
+
+from dataclasses import dataclass
+
+@dataclass
+class FakeLlama:
+    model: str
+    n_ctx: int
+
+    def create_completion(self, prompt, *, max_tokens, temperature, stop, stream):
+        if stream:
+            for chunk in ollama.chat(model=self.model, prompt=prompt, stream=True, options={
+                'temperature': temperature,
+                'num_ctx': self.n_ctx,
+                'stop': stop,
+                'num_predict': max_tokens
+            }, raw=True):
+                # TODO: transform it into the expected format
+                assert False
+        else:
+            resp = ollama.chat(model=self.model, prompt=prompt, options={
+                'temperature': temperature,
+                'num_ctx': self.n_ctx,
+                'stop': stop,
+                'num_predict': max_tokens
+            }, raw=True)
+            assert False
+            # TODO: transform it into the expected format
 
 ANSWER_START = "<<<ANSWER>>>"
 ANSWER_END   = "<<<END>>>"
@@ -21,7 +59,7 @@ def text_cleaning(prompt):
 def get_system_prompt(mode="tutor"):
     """
     Get system prompt based on mode.
-    
+
     Modes:
     - baseline: No system prompt (minimal instruction)
     - tutor: Friendly tutoring style (default)
@@ -30,7 +68,7 @@ def get_system_prompt(mode="tutor"):
     """
     prompts = {
         "baseline": "",
-        
+
         "tutor": textwrap.dedent(f"""
             You are a tutor. Follow these rules:
             1. Analyze the user question and identify all parts that need answering.
@@ -38,7 +76,7 @@ def get_system_prompt(mode="tutor"):
             3. Answer the question completely and concisely, as if teaching a student.
             End your reply with {ANSWER_END}.
         """).strip(),
-        
+
         "concise": textwrap.dedent(f"""
             You are a concise assistant. Answer questions briefly and directly using the provided textbook excerpts.
             - Keep answers short and to the point
@@ -46,7 +84,7 @@ def get_system_prompt(mode="tutor"):
             - Use bullet points when appropriate
             End your reply with {ANSWER_END}.
         """).strip(),
-        
+
         "detailed": textwrap.dedent(f"""
             You are a comprehensive educational assistant. Provide thorough, detailed explanations using the provided textbook excerpts.
             - Explain concepts in depth with context
@@ -57,14 +95,14 @@ def get_system_prompt(mode="tutor"):
             End your reply with {ANSWER_END}.
         """).strip(),
     }
-    
+
     return prompts.get(mode)
 
 
 def format_prompt(chunks, query, max_chunk_chars=400, system_prompt_mode="tutor"):
     """
     Format prompt for LLM with chunks and query.
-    
+
     Args:
         chunks: List of text chunks (can be empty for baseline)
         query: User question
@@ -74,17 +112,17 @@ def format_prompt(chunks, query, max_chunk_chars=400, system_prompt_mode="tutor"
     # Get system prompt
     system_prompt = get_system_prompt(system_prompt_mode)
     system_section = f"<|im_start|>system\n{system_prompt}\n<|im_end|>\n" if system_prompt else ""
-    
+
     # Build prompt based on whether chunks are provided
     if chunks and len(chunks) > 0:
         if isinstance(chunks[0], tuple):
             chunks = [c[0] for c in chunks]
         context = "\n\n".join(chunks)
         context = text_cleaning(context)
-        
+
         # Build prompt with chunks
         context_section = f"Textbook Excerpts:\n{context}\n\n\n"
-        
+
         final_prompt = textwrap.dedent(f"""\
             {system_section}<|im_start|>user
             {context_section}Question: {query}
@@ -99,7 +137,7 @@ def format_prompt(chunks, query, max_chunk_chars=400, system_prompt_mode="tutor"
     else:
         # Build prompt without chunks
         question_label = "Question: " if system_prompt else ""
-        
+
         return textwrap.dedent(f"""\
             {system_section}<|im_start|>user
             {question_label}{query}
@@ -113,19 +151,26 @@ _LLM_CACHE = {}
 def get_llama_model(model_path: str, n_ctx: int = 4096):
     if model_path not in _LLM_CACHE:
         try:
-            _LLM_CACHE[model_path] = Llama(model_path=model_path,
-                                       n_ctx=n_ctx,
-                                       verbose=False,
-                                       n_gpu_layers=-1,
-                                       flash_attn=True)
+            if USING_OLLAMA:
+                _LLM_CACHE[model_path] = FakeLlama(model_path)
+            else:
+                _LLM_CACHE[model_path] = Llama(model_path=model_path,
+                                        n_ctx=n_ctx,
+                                        verbose=False,
+                                        n_gpu_layers=-1,
+                                        flash_attn=True)
         except Exception as e:
             print(f"Error loading LLaMA model from {model_path} on GPU: {e}")
-            _LLM_CACHE[model_path] = Llama(model_path=model_path,
-                                       n_ctx=n_ctx,
-                                       verbose=False)
+            if USING_OLLAMA:
+                _LLM_CACHE[model_path] = FakeLlama(model_path)
+            else:
+                _LLM_CACHE[model_path] = Llama(model_path=model_path,
+                                        n_ctx=n_ctx,
+                                        verbose=False)
 
-        cache = LlamaRAMCache()
-        _LLM_CACHE[model_path].set_cache(cache)
+        if not USING_OLLAMA:
+            cache = LlamaRAMCache()
+            _LLM_CACHE[model_path].set_cache(cache)
     return _LLM_CACHE[model_path]
 
 def stream_llama_cpp(prompt: str, model_path: str, max_tokens: int, temperature: float):
@@ -134,7 +179,7 @@ def stream_llama_cpp(prompt: str, model_path: str, max_tokens: int, temperature:
     Usage:
         for delta in stream_llama_cpp(...): print(delta, end="", flush=True)
     """
-    model : Llama = get_llama_model(model_path)
+    model : Llama | FakeLlama = get_llama_model(model_path)
     for ev in model.create_completion(
         prompt,
         max_tokens=max_tokens,
@@ -146,7 +191,7 @@ def stream_llama_cpp(prompt: str, model_path: str, max_tokens: int, temperature:
         yield delta
 
 def run_llama_cpp(prompt: str, model_path: str, max_tokens: int, temperature: float):
-    model: Llama = get_llama_model(model_path)
+    model: Llama | FakeLlama = get_llama_model(model_path)
     return model.create_completion(
         prompt,
         max_tokens=max_tokens,

@@ -5,26 +5,54 @@ import multiprocessing.pool
 import numpy as np
 from pathlib import Path
 from typing import List, Union, Optional
-from llama_cpp import Llama
+try:
+    from llama_cpp import Llama
+except ImportError:
+    try:
+        import ollama
+    except ImportError:
+        print('one of llama_cpp or ollama must be installed')
+        raise
+    else:
+        USING_OLLAMA = True
+else:
+    USING_OLLAMA = False
+
 from tqdm import tqdm
+from dataclasses import dataclass
+
+@dataclass
+class FakeLlama:
+    model: str
+    n_ctx: int
+
+    def create_embedding(self, input: str | list[str]):
+        emb = ollama.embed(model=self.model, input=input, options={
+            'num_ctx': self.n_ctx
+        })
+        assert False  # figure out how to turn emb into embedding vector
+
 
 # Global variables for worker processes
-_worker_model: Optional[Llama] = None
+_worker_model: Optional[Llama | FakeLlama] = None
 _worker_embedding_dim: int = 0
 
 
-def _init_worker(model_path: str, n_ctx: int, n_threads: int):
+def _init_worker(use_ollama: bool, model_path: str, n_ctx: int, n_threads: int):
     """Initializes the model inside a worker process."""
     global _worker_model, _worker_embedding_dim
 
-    _worker_model = Llama(
-        model_path=model_path,
-        n_ctx=n_ctx,
-        n_threads=n_threads,
-        embedding=True,
-        verbose=False,
-        use_mmap=True,
-    )
+    if USING_OLLAMA:
+        _worker_model = FakeLlama(model_path, n_ctx)
+    else:
+        _worker_model = Llama(
+            model_path=model_path,
+            n_ctx=n_ctx,
+            n_threads=n_threads,
+            embedding=True,
+            verbose=False,
+            use_mmap=True,
+        )
 
     test_emb = _worker_model.create_embedding("test")['data'][0]['embedding']
     _worker_embedding_dim = len(test_emb)
@@ -60,15 +88,18 @@ class SentenceTransformer:
         self.model_path = model_path
         self.n_ctx = n_ctx
 
-        self.model = Llama(
-            model_path=model_path,
-            n_ctx=n_ctx,
-            n_threads=n_threads,
-            embedding=True,
-            verbose=False,
-            use_mmap=True,
-            n_gpu_layers=-1,
-        )
+        if USING_OLLAMA:
+            self.model = FakeLlama(model_path)
+        else:
+            self.model = Llama(
+                model_path=model_path,
+                n_ctx=n_ctx,
+                n_threads=n_threads,
+                embedding=True,
+                verbose=False,
+                use_mmap=True,
+                n_gpu_layers=-1,
+            )
         self._embedding_dimension = None
 
         # Warm up — also caches embedding dimension
@@ -113,6 +144,7 @@ class SentenceTransformer:
         embeddings = []
         failed_indices = []
 
+        # TODO: this can be optimized to use batches when using ollama
         for i, text in enumerate(tqdm(texts, desc="Encoding", disable=not show_progress_bar)):
             try:
                 emb = self.model.create_embedding(text)['data'][0]['embedding']
