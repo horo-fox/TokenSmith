@@ -19,9 +19,11 @@ There's always more software engineering practices to follow, so I
 decided that the best project for me, considering I am familiar with
 the Python ecosystem, is to help improve the setup for TokenSmith.
 
-TODO: original pitch for my idea, original ideas. To quote:
-> A re-iteration of your proposed goals, with explicit discussion about
-> what progress you have made to date on those goals.
+I had many original ideas, all of which are discussed and solved here;
+the `readline` change is the only change not inspired by my ideas.
+Additionally, I did not accomplish my goal of improving the test suite.
+Due to iterating through all these ideas, I accomplished all my
+original goal of making TokenSmith easier to contribute to!
 
 Most notably, I allowed developers to use `uv` instead of `conda`,
 which makes installation significantly faster and be more familiar to
@@ -129,12 +131,81 @@ already a dependency for the markdown viewing in the terminal.
 
 == Future work
 
-TODO, but:
- - fixing type errors
- - fixing lint errors that don't get autofixed
- - evaluating `pre-commit` so that lint issues/formatting issues don't
-   need an extra round-trip to the CI.
- - evaluating the shared interface between `ollama` and `llama_cpp`,
-   since I basically cloned `llama_cpp`'s interface.
- - evaluating new capabilities `ollama` provides, like batches for
-   embedding
+There's many future directions for work to go! For one, I left any type
+errors alone. Many of them simply require some extra type hints. For
+example, the first one `uv run pyright` shows is:
+
+```
+.../TokenSmith/src/api_server.py:137:17 - error: "save_chat_log" is not a known attribute of "None" (reportOptionalMemberAccess)
+```
+
+This can be fixed by changing `_logger = None` to `_logger: RunLogger
+| None = None`, as well as adding an `assert _logger is not None` above
+the `_logger.save_chat_log` usage. Alternatively, if the `except
+Exception:` is meant to catch the `AttributeError`, the code could add
+`if _logger is not None: return False` and remove the `try`/`except`.
+Many other type errors would be this trivial to solve and those that
+require larger refactors could be avoided by adding a `# type: ignore`.
+
+I also didn't address all lint errors. This is because there's so many
+that fixing them would lead to merge conflicts. However,
+`uv run ruff --fix` will take the error count from 90 to 30. The
+remaining ones are likely significantly easier the type errors to fix.
+For example, the first is:
+
+```
+E402 Module level import not at top of file
+  --> src/api_server.py:19:1
+   |
+17 |     sys.path.insert(0, str(_project_root))
+18 |
+19 | from fastapi import FastAPI, HTTPException
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+20 | from fastapi.middleware.cors import CORSMiddleware
+21 | from fastapi.responses import StreamingResponse
+```
+
+This could be fixed by removing the `sys.path` modification logic
+directly above. One possible alternative is to, for example, make
+TokenSmith a proper package, allowing `import tokensmith` instead of
+`import src`.
+
+In this same vein, I didn't go through all possible lint settings to
+choose what would work best for TokenSmith. That can only be done after
+existing lint errors are gone! For future use, I've typically used this
+configuration for ruff:
+
+```toml
+fix = true
+preview = true
+
+[lint]
+extend-select = [
+    "I",  # isort
+    "RUF",  # ruff specific, generally helpful
+    "UP", "FURB", "FLY", "PTH",  # use newest idioms
+    "N", "A",  # names
+    "SIM", "RET", "PIE",  # simplification stuff
+    "T20",  # all output should use rich
+    "B",  # probably a bug
+    # TODO: "ERA",  # remove commented out code
+]
+```
+
+Once all this linting is setup, some people may dislike that changes
+take round trips to CI to notice. In this case, maybe `pre-commit`
+would help: `pre-commit` adds a `git` pre-commit hook so that all
+changes can get checked before getting committed! Concretely, this
+would include `ruff check` and `ruff format`, though not the type
+checker (since the type checker needs all the dependencies).
+
+I intentionally shoved Ollama into the interface `llama_cpp` provides,
+even if that required returning an ad-hoc dictionary. This way, I could
+avoid breaking anything, which justified testing less. However, someone
+with more time could instead construct a shared interface that doesn't
+need to do so much hacky things (constructing a
+`{'data': [{'embedding': embedding_vector}]}` is probably the least
+hacky thing I had to do!). Additionally, this holistic view could allow
+more `ollama` capabilities to be used. For example, `ollama` allows
+embedding to be batched! This is in contrast to `llama_cpp`, which
+according to in-code comments does not support this capability.
