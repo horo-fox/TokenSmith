@@ -19,6 +19,10 @@ There's always more software engineering practices to follow, so I
 decided that the best project for me, considering I am familiar with
 the Python ecosystem, is to help improve the setup for TokenSmith.
 
+TODO: original pitch for my idea, original ideas. To quote:
+> A re-iteration of your proposed goals, with explicit discussion about
+> what progress you have made to date on those goals.
+
 Most notably, I allowed developers to use `uv` instead of `conda`,
 which makes installation significantly faster and be more familiar to
 any potential contributors. Additionally, `uv` provides lockfiles,
@@ -109,3 +113,15 @@ the imports can get resolved. In addition, I added a `|| true` to CI
 for now, since there are 166 errors! This is nonetheless a strict
 improvement as now developers can see all the typechecking issues
 without having to navigate VSCode.
+
+== Future work
+
+TODO, but:
+ - fixing type errors
+ - fixing lint errors that don't get autofixed
+ - evaluating `pre-commit` so that lint issues/formatting issues don't
+   need an extra round-trip to the CI.
+ - evaluating the shared interface between `ollama` and `llama_cpp`,
+   since I basically cloned `llama_cpp`'s interface.
+ - evaluating new capabilities `ollama` provides, like batches for
+   embedding

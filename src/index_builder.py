@@ -151,7 +151,7 @@ def build_index(
         embedding_model_path,
         n_ctx=embedding_model_context_window,
     )
-    print(f"Embedding {len(all_chunks):,} chunks...")
+    print(f"Embedding {len(all_chunks):,} chunks sequentially...")
 
     if use_multiprocessing:
         print("Starting multi-process pool for embeddings...")
