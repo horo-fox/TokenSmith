@@ -83,10 +83,15 @@ should be. To fix this, I removed the following from git:
 
 === Linter + autoformatter
 
-This doesn't seem very hard. I'll need to format my final report
-weirdly, because while I could just do this and provide the diff, the
-changes will very easily go out of sync! Instead, I should probably
-provide commands to do so and provide a branch without these changes.
+Since there was already ruff mentioned in the gitignore, I ensured that
+`uv sync` would install ruff, as well as adding the relevant commands
+to lint and autoformat to the README. I did *not* run `ruff check --fix`
+or `ruff format` to avoid merge conflicts.
+
+=== GitHub Actions
+
+I made the GitHub Actions run on every push, as well as added a new job
+whose only purpose was to run the linter and autoformatter. Since
 
 == Next steps
 

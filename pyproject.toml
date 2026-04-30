@@ -32,9 +32,7 @@ markers = [
 ]
 testpaths = ["tests"]
 
-[tool.black]
-line-length = 88
-target-version = ['py39']
-
-[tool.isort]
-profile = "black"
+[dependency-groups]
+dev = [
+    "ruff>=0.15.12",
+]

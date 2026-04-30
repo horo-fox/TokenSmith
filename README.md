@@ -292,6 +292,16 @@ make update-env
 make export-env
 ```
 
+To run linting, use:
+```shell
+uv run ruff check
+```
+
+And to run the autoformatter, use:
+```shell
+uv run ruff format
+```
+
 ## Testing
 
 ```shell
