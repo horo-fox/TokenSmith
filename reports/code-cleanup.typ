@@ -91,7 +91,9 @@ or `ruff format` to avoid merge conflicts.
 === GitHub Actions
 
 I made the GitHub Actions run on every push, as well as added a new job
-whose only purpose was to run the linter and autoformatter. Since
+whose only purpose was to run the linter and autoformatter. Since I
+did not run the autoformatter or fixed any lints, this will fail for
+now.
 
 == Next steps
 
