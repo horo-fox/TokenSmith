@@ -114,6 +114,19 @@ for now, since there are 166 errors! This is nonetheless a strict
 improvement as now developers can see all the typechecking issues
 without having to navigate VSCode.
 
+== Better prompts for chat mode
+
+Currently `uv run -m src.main chat` uses `input` to get user input, to
+then to the model. However, this can be improved. I added an `import
+readline` to the top of the file, which ensures that basic keyboard
+shortcuts start working (for example option+delete for a single word
+deletion) and that up arrows work.
+
+This is technically not within scope for my project, but it's a single
+line change and a very obscure technique! This could also use e.g.
+`rich.prompt` if someone wants to follow up on this, since `rich` is
+already a dependency for the markdown viewing in the terminal.
+
 == Future work
 
 TODO, but:

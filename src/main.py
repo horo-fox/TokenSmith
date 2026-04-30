@@ -4,6 +4,7 @@ import faiss  # force single OpenMP init
 import argparse
 import json
 import pathlib
+import readline
 import sys
 from typing import Dict, Optional, List, Tuple, Union, Any
 
