@@ -25,11 +25,23 @@ proposal (with better formatting now!), here's some possibilities:
 Some of these are vaguer than others, but generally they should help
 future contributors by standardizing more.
 
-== Current progress
 
-Unfortunately, I easily get distracted. However, I had nonetheless done
-research regarding some of the improvements. Describing them one at a
-time:
+== No longer requiring Anaconda
+
+Anaconda is required for the compiled `llama_cpp`. However, I am not
+convinced that is necessary. The ideal would be to switch away, because
+Anaconda is gigantic -- ~1GB installer via homebrew! -- and an extra
+thing to install and slow: `make build` takes 150.26 seconds. It's also
+sometimes confusing, as I ran into an issue while timing setup where
+`conda activate tokensmith` was telling me to run `conda init`, but I
+had already done that. (the issue was that it was initializing Anaconda
+for the wrong shell!)
+
+=== Switching to a precompiled `llama.cpp` on PyPI
+
+Unfortunately, it seems that Python wheels (precompiled packages) are
+not advanced enough to support the large array of possibilities that
+depend e.g. on your GPU. I don't think this is possible.
 
 === Shelling out to a precompiled provider
 
@@ -49,21 +61,15 @@ Additionally, I think the model names differ between the files and what
 we can provide to `ollama`... I'm not sure if the best solution is an
 extra configuration key.
 
-=== Switching to a precompiled `llama.cpp` on PyPI
-
-Unfortunately, it seems that Python wheels (precompiled packages) are
-not advanced enough to support the large array of possibilities that
-depend e.g. on your GPU. I don't think this one is possible.
-
-=== Lockfile
+=== One more benefit: lockfile
 
 It looks like there's a #link("https://github.com/conda/conda-lock")[conda-lock]
 project that provides lockfiles for anaconda. However, it appears any
 `conda create` would need to then be `conda-lock install`, which is not
 great.
 
-If it's possible to avoid compiling `llama.cpp`, I think the project
-could support `uv`, which has a `uv.lock` file.
+Instead, by allowing the project to be installed via `uv`, I've
+automatically made lockfiles work.
 
 === Linter + autoformatter
 
