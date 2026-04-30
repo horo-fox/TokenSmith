@@ -20,11 +20,11 @@ from src.ranking.ranker import EnsembleRanker
 from src.preprocessing.chunking import DocumentChunker
 from src.query_enhancement import generate_hypothetical_document, contextualize_query
 from src.retriever import (
-    filter_retrieved_chunks, 
-    BM25Retriever, 
-    FAISSRetriever, 
-    IndexKeywordRetriever, 
-    get_page_numbers, 
+    filter_retrieved_chunks,
+    BM25Retriever,
+    FAISSRetriever,
+    IndexKeywordRetriever,
+    get_page_numbers,
     load_artifacts
 )
 from src.ranking.reranker import rerank
@@ -42,7 +42,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--model_path", help="path to generation model")
     parser.add_argument("--system_prompt_mode", choices=["baseline", "tutor", "concise", "detailed"], default="baseline")
-    
+
     indexing_group = parser.add_argument_group("indexing options")
     indexing_group.add_argument("--keep_tables", action="store_true")
     indexing_group.add_argument("--multiproc_indexing", action="store_true")
@@ -157,7 +157,7 @@ def get_answer(
 ) -> Union[str, Tuple[str, List[Dict[str, Any]], Optional[str]]]:
     """
     Run a single query through the pipeline.
-    """    
+    """
     chunks = artifacts["chunks"]
     sources = artifacts["sources"]
     retrievers = artifacts["retrievers"]
@@ -172,7 +172,7 @@ def get_answer(
     normalized_question = cache.normalize_question(question)
     config_cache_key = cache.make_config_key(cfg, args, golden_chunks)
     question_embedding = cache.compute_embedding(normalized_question, retrievers, cfg.embed_model)
-    
+
     semantic_hit = cache.lookup(config_cache_key, question_embedding, normalized_question)
 
     # Return cached answer if found
@@ -222,23 +222,23 @@ def get_answer(
         # print(f"Top-{cfg.top_k} chunk indices after filtering: {topk_idxs}")
         # print("Len Ranked chunks:", len(ranked_chunks))
         # print("Example ranked chunk content:", ranked_chunks[0] if ranked_chunks else "No chunks retrieved")
-        
-        
+
+
         # Capture chunk info if in test mode
         if is_test_mode:
             # Compute individual ranker ranks
             faiss_scores = raw_scores.get("faiss", {})
             bm25_scores = raw_scores.get("bm25", {})
             index_scores = raw_scores.get("index_keywords", {})
-            
+
             faiss_ranked = sorted(faiss_scores.keys(), key=lambda i: faiss_scores[i], reverse=True)
             bm25_ranked = sorted(bm25_scores.keys(), key=lambda i: bm25_scores[i], reverse=True)
             index_ranked = sorted(index_scores.keys(), key=lambda i: index_scores[i], reverse=True)
-            
+
             faiss_ranks = {idx: rank + 1 for rank, idx in enumerate(faiss_ranked)}
             bm25_ranks = {idx: rank + 1 for rank, idx in enumerate(bm25_ranked)}
             index_ranks = {idx: rank + 1 for rank, idx in enumerate(index_ranked)}
-            
+
             chunks_info = []
             for rank, idx in enumerate(topk_idxs, 1):
                 chunks_info.append({
@@ -329,7 +329,7 @@ def get_answer(
 
     if is_test_mode:
         return ans, chunks_info, hyde_query
-    
+
     return ans
 
 def render_streaming_ans(console, stream_iter):
@@ -364,7 +364,7 @@ def get_keywords(question: str) -> list:
     Simple keyword extraction from the question.
     """
     stopwords = set([
-        "the", "is", "at", "which", "on", "for", "a", "an", "and", "or", "in", 
+        "the", "is", "at", "which", "on", "for", "a", "an", "and", "or", "in",
         "to", "of", "by", "with", "that", "this", "it", "as", "are", "was", "what"
     ])
     words = question.lower().split()
@@ -384,7 +384,7 @@ def run_chat_session(args: argparse.Namespace, cfg: RAGConfig):
         retrievers = [FAISSRetriever(faiss_idx, cfg.embed_model), BM25Retriever(bm25_idx)]
         if cfg.ranker_weights.get("index_keywords", 0) > 0:
             retrievers.append(IndexKeywordRetriever(cfg.extracted_index_path, cfg.page_to_chunk_map_path))
-        
+
         ranker = EnsembleRanker(ensemble_method=cfg.ensemble_method, weights=cfg.ranker_weights, rrf_k=int(cfg.rrf_k))
         print("Loaded retrievers and initialized ranker.")
         artifacts = {"chunks": chunks, "sources": sources, "retrievers": retrievers, "ranker": ranker, "meta": meta}
@@ -405,20 +405,20 @@ def run_chat_session(args: argparse.Namespace, cfg: RAGConfig):
             if q.lower() in {"exit", "quit"}:
                 print("Goodbye!")
                 break
-            
+
             effective_q = q
             if cfg.enable_history and chat_history:
-                try:
-                    effective_q = contextualize_query(q, chat_history, cfg.gen_model)
-                    additional_log_info["is_contextualizing_query"] = True
-                    additional_log_info["contextualized_query"] = effective_q
-                    additional_log_info["original_query"] = q
-                    additional_log_info["chat_history"] = chat_history
-                    print(f"Contextualized Query: {effective_q}")  # Debug print to trace contextualization
-                except Exception as e:
-                    print(f"Warning: Failed to contextualize query: {e}. Using original query.")
-                    effective_q = q
-            
+                # try:
+                effective_q = contextualize_query(q, chat_history, cfg.gen_model)
+                additional_log_info["is_contextualizing_query"] = True
+                additional_log_info["contextualized_query"] = effective_q
+                additional_log_info["original_query"] = q
+                additional_log_info["chat_history"] = chat_history
+                print(f"Contextualized Query: {effective_q}")  # Debug print to trace contextualization
+                # except Exception as e:
+                #     print(f"Warning: Failed to contextualize query: {e}. Using original query.")
+                #     effective_q = q
+
             # Use the single query function. get_answer also renders the streaming markdown and takes care of logging, so we need not do anything else here.
             ans = get_answer(effective_q, cfg, args, logger, console, artifacts=artifacts, additional_log_info=additional_log_info)
 

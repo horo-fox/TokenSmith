@@ -9,7 +9,7 @@
 
 * Parse and index PDF documents
 * Semantic retrieval with FAISS
-* Local inference via `llama.cpp` (GGUF models)
+* Local inference via `llama.cpp` (GGUF models) or `ollama`
 * Acceleration: Metal (Apple Silicon), CUDA (NVIDIA), or CPU
 * Configurable chunking (tokens or characters)
 * Optional indexing progress visualization
@@ -18,8 +18,8 @@
 ## Requirements
 
 * **Python** 3.9+
-* **Conda/Miniconda**
-* **System prerequisites**:
+* **Conda/Miniconda** or **ollama + uv**
+* **System prerequisites**: (only if using Conda)
 
   * macOS: Xcode Command Line Tools
   * Linux: GCC, make, CMake
@@ -49,10 +49,26 @@ and put them in the `models/embedders/` and `models/generators/` folders with th
 - https://huggingface.co/Qwen/Qwen3-Embedding-4B-GGUF/tree/main
 - https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/tree/main
 
+Alternatively, if using `ollama`, if your config.yaml has:
+```yaml
+embed_model: "qwen3-embedding:4b"
+model_path: "qwen3.5:2b"
+```
+
+Then run:
+```
+ollama pull qwen3-embedding:4b
+ollama pull qwen3.5:2b
+```
+
 ### 2) Build (creates env, builds llama.cpp, installs deps)
 
 ```shell
 make build
+```
+alternatively:
+```shell
+uv sync
 ```
 
 #### Troubleshooting: NumPy Version Conflict
@@ -91,12 +107,21 @@ cp your-documents.pdf data/chapters/
 ```shell
 make run-extract
 ```
+alternatively:
+```shell
+uv run -m src.preprocessing.extraction
+```
+
 This generates markdown file(s) under `TOKENSMITH/data/`
 
 ### 6) Index documents
 
 ```shell
 make run-index
+```
+alternatively:
+```shell
+uv run -m src.main index
 ```
 
 With custom parameters:
@@ -121,6 +146,10 @@ make run-add-chapters-partial CHAPTERS="3"
 
 ```shell
 python -m src.main chat
+```
+or, if using `uv`,
+```shell
+uv run -m src.main chat
 ```
 
 Note: if you only indexed a portion of your documents, use

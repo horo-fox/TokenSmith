@@ -19,25 +19,26 @@ class FakeLlama:
     model: str
     n_ctx: int
 
-    def create_completion(self, prompt, *, max_tokens, temperature, stop, stream):
-        if stream:
-            for chunk in ollama.chat(model=self.model, prompt=prompt, stream=True, options={
+    def create_completion(self, prompt, *, max_tokens, temperature, stop, stream=False):
+        def inner_gen():
+            for chunk in ollama.generate(model=self.model, prompt=prompt, stream=True, options={
                 'temperature': temperature,
                 'num_ctx': self.n_ctx,
                 'stop': stop,
                 'num_predict': max_tokens
             }, raw=True):
-                # TODO: transform it into the expected format
-                assert False
+                yield {'choices': [{'text': chunk.response}]}
+
+        if stream:
+            return inner_gen()
         else:
-            resp = ollama.chat(model=self.model, prompt=prompt, options={
+            resp = ollama.generate(model=self.model, prompt=prompt, options={
                 'temperature': temperature,
                 'num_ctx': self.n_ctx,
                 'stop': stop,
                 'num_predict': max_tokens
             }, raw=True)
-            assert False
-            # TODO: transform it into the expected format
+            return {'choices': [{'text': resp.response}]}
 
 ANSWER_START = "<<<ANSWER>>>"
 ANSWER_END   = "<<<END>>>"
@@ -152,7 +153,7 @@ def get_llama_model(model_path: str, n_ctx: int = 4096):
     if model_path not in _LLM_CACHE:
         try:
             if USING_OLLAMA:
-                _LLM_CACHE[model_path] = FakeLlama(model_path)
+                _LLM_CACHE[model_path] = FakeLlama(model_path, n_ctx)
             else:
                 _LLM_CACHE[model_path] = Llama(model_path=model_path,
                                         n_ctx=n_ctx,
@@ -162,7 +163,7 @@ def get_llama_model(model_path: str, n_ctx: int = 4096):
         except Exception as e:
             print(f"Error loading LLaMA model from {model_path} on GPU: {e}")
             if USING_OLLAMA:
-                _LLM_CACHE[model_path] = FakeLlama(model_path)
+                _LLM_CACHE[model_path] = FakeLlama(model_path, n_ctx)
             else:
                 _LLM_CACHE[model_path] = Llama(model_path=model_path,
                                         n_ctx=n_ctx,

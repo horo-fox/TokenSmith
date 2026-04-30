@@ -8,6 +8,7 @@ from typing import List, Union, Optional
 try:
     from llama_cpp import Llama
 except ImportError:
+    Llama = None
     try:
         import ollama
     except ImportError:
@@ -30,7 +31,11 @@ class FakeLlama:
         emb = ollama.embed(model=self.model, input=input, options={
             'num_ctx': self.n_ctx
         })
-        assert False  # figure out how to turn emb into embedding vector
+        return {
+            'data': [{
+                'embedding': emb.embeddings[0]
+            }]
+        }
 
 
 # Global variables for worker processes
@@ -89,7 +94,7 @@ class SentenceTransformer:
         self.n_ctx = n_ctx
 
         if USING_OLLAMA:
-            self.model = FakeLlama(model_path)
+            self.model = FakeLlama(model_path, n_ctx)
         else:
             self.model = Llama(
                 model_path=model_path,

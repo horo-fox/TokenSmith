@@ -62,7 +62,7 @@ def build_index(
         markdown_file,
         exclusion_keywords=DEFAULT_EXCLUSION_KEYWORDS
     )
-    
+
     if chapters_to_index:
         sections = [s for s in sections if s.get('chapter') in chapters_to_index]
 
@@ -151,7 +151,7 @@ def build_index(
         embedding_model_path,
         n_ctx=embedding_model_context_window,
     )
-    print(f"Embedding {len(all_chunks):,} chunks sequentially...")
+    print(f"Embedding {len(all_chunks):,} chunks...")
 
     if use_multiprocessing:
         print("Starting multi-process pool for embeddings...")
