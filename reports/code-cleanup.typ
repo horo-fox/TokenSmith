@@ -26,7 +26,7 @@ Some of these are vaguer than others, but generally they should help
 future contributors by standardizing more.
 
 
-== No longer requiring Anaconda
+=== No longer requiring Anaconda
 
 Anaconda is required for the compiled `llama_cpp`. However, I am not
 convinced that is necessary. The ideal would be to switch away, because
@@ -37,13 +37,13 @@ sometimes confusing, as I ran into an issue while timing setup where
 had already done that. (the issue was that it was initializing Anaconda
 for the wrong shell!)
 
-=== Switching to a precompiled `llama.cpp` on PyPI
+==== Switching to a precompiled `llama.cpp` on PyPI
 
 Unfortunately, it seems that Python wheels (precompiled packages) are
 not advanced enough to support the large array of possibilities that
 depend e.g. on your GPU. I don't think this is possible.
 
-=== Shelling out to a precompiled provider
+==== Shelling out to a precompiled provider
 
 It seems possible to use Ollama. Essentially, anything with a
 `from llama_cpp import Llama` has been replaced with `import ollama`.
@@ -63,7 +63,7 @@ After making this change, I switched the project to be able to use
 `make build` which took 150.26 seconds (n=1), `uv sync` with a cold
 cache took 9.7 seconds (n=1).
 
-=== One more benefit: lockfile
+==== One more benefit: lockfiles
 
 It looks like there's a #link("https://github.com/conda/conda-lock")[conda-lock]
 project that provides lockfiles for anaconda. However, it appears any
@@ -72,6 +72,14 @@ great.
 
 Instead, by allowing the project to be installed via `uv`, I've
 automatically made lockfiles work.
+
+=== Clean up repository
+
+There are many files included in the repository that I don't think
+should be. To fix this, I removed the following from git:
+ - `.DS_Store` and `index/.DS_Store`
+ - `config/config.yaml` (I copied it to `config.example.yaml`)
+ - `data/*`
 
 === Linter + autoformatter
 
